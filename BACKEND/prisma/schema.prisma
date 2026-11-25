@@ -1,0 +1,263 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////////
+// USERS
+//////////////////////////////////////////////////////
+
+model User {
+  id               Int       @id @default(autoincrement())
+  name             String
+  email            String    @unique
+  password         String
+
+  role             UserRole  @default(USER)
+
+  isActive         Boolean   @default(true)
+  mailRecordatorio DateTime?
+
+  resetToken        String?   @unique
+  resetTokenExpires DateTime?
+
+  projects Project[]
+  projectMemberships ProjectMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+//////////////////////////////////////////////////////
+// PROJECTS
+//////////////////////////////////////////////////////
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  location    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Decimal? @db.Decimal(15, 2)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  services ProjectService[]
+  tasks    ProjectTask[]
+  members  ProjectMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("projects")
+}
+
+//////////////////////////////////////////////////////
+// SERVICIOS DEL SISTEMA (ADMIN)
+//////////////////////////////////////////////////////
+
+model ServiceCatalog {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+
+  forms Form[]
+
+  projectServices ProjectService[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("service_catalog")
+}
+
+//////////////////////////////////////////////////////
+// SERVICIOS ACTIVADOS EN PROYECTOS
+//////////////////////////////////////////////////////
+
+model ProjectService {
+  id Int @id @default(autoincrement())
+
+  projectId Int
+  serviceId Int
+
+  project Project @relation(fields: [projectId], references: [id])
+  service ServiceCatalog @relation(fields: [serviceId], references: [id])
+
+  responses FormResponse[]
+
+  createdAt DateTime @default(now())
+
+  @@map("project_services")
+}
+
+//////////////////////////////////////////////////////
+// FORMULARIOS (CREADOS POR ADMIN)
+//////////////////////////////////////////////////////
+
+model Form {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+
+  serviceId Int
+  service   ServiceCatalog @relation(fields: [serviceId], references: [id])
+
+  fields FormField[]
+
+  responses FormResponse[]   // 👈 ESTA LINEA FALTABA
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("forms")
+}
+
+
+//////////////////////////////////////////////////////
+// CAMPOS DEL FORMULARIO
+//////////////////////////////////////////////////////
+
+model FormField {
+  id       Int    @id @default(autoincrement())
+  label    String
+  type     FieldType
+  required Boolean @default(false)
+
+  order Int?
+
+  formId Int
+  form   Form @relation(fields: [formId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("form_fields")
+}
+
+//////////////////////////////////////////////////////
+// RESPUESTAS DEL FORMULARIO
+//////////////////////////////////////////////////////
+
+model FormResponse {
+  id Int @id @default(autoincrement())
+
+  formId Int
+  form   Form @relation(fields: [formId], references: [id])
+
+  projectServiceId Int
+  projectService ProjectService @relation(fields: [projectServiceId], references: [id])
+
+  data Json
+
+  photos FormPhoto[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("form_responses")
+}
+
+//////////////////////////////////////////////////////
+// REGISTRO FOTOGRAFICO
+//////////////////////////////////////////////////////
+
+model FormPhoto {
+  id Int @id @default(autoincrement())
+
+  url String
+
+  responseId Int
+  response FormResponse @relation(fields: [responseId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("form_photos")
+}
+
+//////////////////////////////////////////////////////
+// TIPOS DE CAMPOS
+//////////////////////////////////////////////////////
+
+enum FieldType {
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT
+  TEXTAREA
+  PHOTO
+}
+
+//////////////////////////////////////////////////////
+// PROJECT SCHEDULE AND SHARING
+//////////////////////////////////////////////////////
+
+model ProjectTask {
+  id             Int          @id @default(autoincrement())
+  projectId      Int
+  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?      @db.Text
+  assignedTo     String?
+  startDate      DateTime?
+  endDate        DateTime?
+  progress       Int          @default(0)
+  status         TaskStatus   @default(PENDING)
+  priority       TaskPriority @default(NORMAL)
+  plannedCost    Decimal      @default(0) @db.Decimal(15, 2)
+  actualCost     Decimal      @default(0) @db.Decimal(15, 2)
+  predecessorIds Json?
+  sortOrder      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([projectId, sortOrder])
+  @@map("project_tasks")
+}
+
+model ProjectMember {
+  id        Int               @id @default(autoincrement())
+  projectId Int
+  userId    Int
+  role      ProjectMemberRole @default(VIEWER)
+  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum ProjectMemberRole {
+  EDITOR
+  VIEWER
+}

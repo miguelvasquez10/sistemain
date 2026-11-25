@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+.input-soft {
+  @apply bg-white rounded-lg px-3 py-2 text-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-[#0A6A50] outline-none;
+}
+
+.input-disabled {
+  @apply bg-gray-100 rounded-lg px-3 py-2 text-sm text-gray-400;
+}
+
+.btn-doc-primary {
+  @apply bg-[#0A6A50] hover:bg-[#085f48] text-white px-4 py-2 rounded-lg text-sm font-medium;
+}
+
+.btn-doc-secondary {
+  @apply bg-white border border-[#0A6A50] text-[#0A6A50] hover:bg-[#0A6A50] hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition;
+}
+
+.textarea-soft {
+  @apply w-full rounded-lg px-3 py-2 text-sm
+  ring-1 ring-gray-200 focus:ring-2
+  focus:ring-[#0A6A50] outline-none resize-none bg-white;
+}
+
+.input-number {
+  @apply w-full rounded-lg px-2 py-2 text-sm text-right
+  ring-1 ring-gray-200 focus:ring-2
+  focus:ring-[#0A6A50] outline-none bg-white;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+.animate-slideOut {
+  animation: slideOut 0.4s ease-in forwards;
+}
+
+@keyframes modalFade {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal {
+  animation: modalFade 0.18s ease-out;
+}
